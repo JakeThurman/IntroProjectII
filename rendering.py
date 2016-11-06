@@ -42,10 +42,10 @@ class OptionRenderer(object):
 		self.surface = surface
 		self.do_hover = do_hover
 
-	def render(self, text, pos, color=colors.MID_GRAY, hover_color=colors.WHITE):
+	def render(self, text, pos, color=colors.MID_GRAY, hover_color=colors.WHITE, center=False):
 		""" Renders an option
 		"""
-		rect = self._make_rect(text, pos)
+		rect = self._make_rect(text, pos, center)
 		rend = self._do_rend(text, rect, color, hover_color)
 		self.surface.blit(rend, rect)
 		return Option(self._is_hovered(rect))
@@ -68,11 +68,14 @@ class OptionRenderer(object):
 		else:
 			return color
 	
-	def _make_rect(self, text, pos):
+	def _make_rect(self, text, pos, center):
 		"""Makes the outline rectangle for the object
 		"""
 		rect = self._do_rend(text, None, (0,0,0), (0,0,0)).get_rect()
-		rect.topleft = pos
+		if center:
+			rect.center = pos
+		else:
+			rect.topleft = pos
 		return rect
 		
 class Sprite(pygame.sprite.Sprite):

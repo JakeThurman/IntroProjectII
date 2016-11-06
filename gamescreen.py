@@ -81,10 +81,11 @@ class PlayAgainScreen(Screen):
 		
 		self.yes_bttn = self.option_renderer.render("Yes Please!",   (ss[0]/10, (ss[1]/10) * 4), color=colors.LIGHT_GRAY)
 		self.no_bttn =  self.option_renderer.render("No. I'm Done.", (ss[0]/10, (ss[1]/10) * 5), color=colors.LIGHT_GRAY)
-	
-def split_list(a_list):
-	half = len(a_list)//2
-	return a_list[:half], a_list[half:]
+
+class GameState:
+	DECK_SPLIT = 0
+	GAME = 1
+	GAME_OVER = 2
 	
 class GameScreen(Screen):
 	"""Renderers Game Screen
@@ -104,7 +105,7 @@ class GameScreen(Screen):
 		# Store settings
 		self._screen_size = screen_size
 		self._screen_manager = screen_manager
-		
+				
 		# the deck of cards the game is played with.
 		#  Used cards will be discarded into the deck
 		#  The string at index 0 of each item is the name of that card's image
@@ -125,11 +126,17 @@ class GameScreen(Screen):
 		
 		# Shuffle our beautiful new deck
 		random.shuffle(self.deck)
-			
-		# Split the deck in 2
-		p1d, p2d = split_list(self.deck)
-		self.player_1_deck = p1d
-		self.player_2_deck = p2d
+				
+		# Set Initial State
+		self._state = GameState.DECK_SPLIT
+		self._should_make_war = False
+		self._player_1_won_turn = None
+		
+		self._deck_split_timer = 0
+		self._war_timer = 0
+		
+		self.player_1_deck = []
+		self.player_2_deck = []
 		
 		self.player_1_battlefield = []
 		self.player_2_battlefield = []
@@ -137,20 +144,29 @@ class GameScreen(Screen):
 		self.player_1_score = 0
 		self.player_2_score = 0
 		
-		self.game_is_over = False		
-				
 	def handle_click(self):
-		if self.game_is_over:
+		if self._state == GameState.GAME_OVER:
 			self._on_game_end()
-		else:
+		elif self._state == GameState.GAME:
 			self._take_turn()
 		
 	def _take_turn(self):
-		self._draw_card()
-		self._find_turn_champ()
+		if self._should_make_war:
+			# When the cards are a tied, we have a war
+			# Both players draw 3 cards, and then check who won.
+			# Also reset the war flag
+			self._should_make_war = False
+			self._war_timer = 0
+			self._draw_card()
+			self._draw_card()
+			self._draw_card()
+			self._find_turn_champ(from_a_war=True)
+		else:
+			self._draw_card()
+			self._find_turn_champ(from_a_war=False)
 		
 	def _draw_card(self):
-		if self.game_is_over:
+		if self._state == GameState.GAME_OVER:
 			return
 	
 		# display player 1's next card
@@ -161,32 +177,27 @@ class GameScreen(Screen):
 
 		# stop the game if we run out of cards
 		if len(self.player_1_deck) == 0 or len(self.player_2_deck) == 0:
-			self.game_is_over = True
+			self._state = GameState.GAME_OVER
 			
-	def _find_turn_champ(self, can_make_war=True):
+	def _find_turn_champ(self, from_a_war):
 		player_1_card = self.player_1_battlefield[len(self.player_1_battlefield)-1]
 		player_2_card = self.player_2_battlefield[len(self.player_2_battlefield)-1]
 		
 		# Player 1 wins the skirmish
 		if(player_1_card[1] > player_2_card[1]):
 			self.player_1_score += player_1_card[1]
+			self._player_1_won_turn = True
 		
 		# Player 2 wins the skirmish
 		elif(player_1_card[1] < player_2_card[1]):
 			self.player_2_score += player_2_card[1]
+			self._player_1_won_turn = False
 		
 		# The Players have tied
-		elif can_make_war:
-			self._make_war()
-			
-	def _make_war(self):
-		# When the cards are a tied, we have a war
-		# Both players draw 3 cards, and then check who won.
-		self._draw_card()
-		self._draw_card()
-		self._draw_card()
-		self._find_turn_champ(can_make_war=False)
-		
+		elif not from_a_war:
+			self._should_make_war = True
+			self._player_1_won_turn = None
+	
 	def _on_game_end(self):		
 		winner_is_player1 = self.player_1_score > self.player_2_score
 		winner_score = self.player_1_score if winner_is_player1 else self.player_2_score
@@ -200,29 +211,69 @@ class GameScreen(Screen):
 			pygame.quit()
 			sys.exit()
 			
-	def _render_players_battlefield(self, battlefield, start_pos):
+	def _render_card_set(self, battlefield, start_pos, draw_card_backs=False):
 		for i in range(0, len(battlefield)):
 			crd = battlefield[i]
-			img = get_card_sprite(start_pos[0], start_pos[1] + (i * 7), crd[0])
+			img = get_card_sprite(start_pos[0], start_pos[1] + (i * 7), "back" if draw_card_backs else crd[0])
 			self.sprite_renderer.render(img)
 			
+	def _handle_time(self, refresh_time):
+		self._deck_split_timer += refresh_time
+		
+		# Split the deck after a small delay	
+		if self._state == GameState.DECK_SPLIT and self._deck_split_timer > 250:
+			self.player_1_deck.append(self.deck.pop(0))
+			self.player_2_deck.append(self.deck.pop())
+			
+			# Move to the next state if the deck is cleared
+			if len(self.deck) == 0:
+				self._state = GameState.GAME
+				
+		# Handle a "war" delay
+		if self._should_make_war:
+			self._war_timer += refresh_time
+			
+			if self._war_timer > 500:
+				self._take_turn()
+	
 	def render(self, refresh_time):
 		"""Renderers the screen 
-		"""
+		"""	
+		self._handle_time(refresh_time)
+		
 		# Set the backgroud to white
 		self.shape_renderer.render_rect((0, 0, self._screen_size[0], self._screen_size[1]), color=colors.DARK_GRAY)
 		
+		# Shortcut named variable
 		ss = self._screen_size
-		if self.game_is_over:
-			self.option_renderer.render("Game Over!", (ss[0]/4 + 110, ss[1]/2), color=colors.LIGHT_GRAY)
 		
-		self._render_players_battlefield(self.player_1_battlefield, (ss[0]/4, ss[1]/6))
-		self._render_players_battlefield(self.player_2_battlefield, (ss[0] - ss[0]/4 - CARD_WIDTH, ss[1]/6))
+		# Render the initial deck
+		self._render_card_set(self.deck, (ss[0]/2 - CARD_WIDTH/2, ss[1]/6), draw_card_backs=True)
+	
+		if self._state == GameState.GAME:
+			# Tell the players how to play if the game is still going
+			self.option_renderer.render("Click to take a turn!".format(self.player_2_score), (ss[0]/25, ss[1] - ss[1]/10), color=colors.MID_GRAY, hover_color=colors.MID_GRAY)
 		
-		self.option_renderer.render("Player 1 ({0} points)".format(self.player_1_score), (ss[0]/7, ss[1]/15), color=colors.WHITE)
-		self.option_renderer.render("Player 2 ({0} points)".format(self.player_2_score), (ss[0]/7 * 4, ss[1]/15), color=colors.WHITE)
+			if self._should_make_war:
+				# Alert when there is a war going on
+				self.option_renderer.render("WAR TIME", (ss[0]/2, ss[1]/2), color=colors.LIGHT_GRAY, hover_color=colors.LIGHT_GRAY, center=True)
+				
+			if self._player_1_won_turn != None:
+				# Alert the user of who won each turn
+				self.option_renderer.render("WINNER", (ss[0]/4 if self._player_1_won_turn else ss[0]-ss[0]/4, ss[1]/20), color=colors.LIGHT_GRAY, hover_color=colors.LIGHT_GRAY, center=True)
 		
-		
-		self.option_renderer.render("Click to take a turn!".format(self.player_2_score), (ss[0]/10, ss[1] - ss[1]/10), color=colors.MID_GRAY, hover_color=colors.MID_GRAY)
-		
-		
+		if self._state == GameState.GAME_OVER:
+			# Tell the players when the game is over
+			self.option_renderer.render("Game Over!", (ss[0]/2, ss[1]/2), color=colors.LIGHT_GRAY, center=True)
+			
+		# Draw the player cards
+		self._render_card_set(self.player_1_battlefield, (ss[0]/4, ss[1]/6))
+		self._render_card_set(self.player_2_battlefield, (ss[0] - ss[0]/4 - CARD_WIDTH, ss[1]/6))
+	
+		# Print the score above the battlefield
+		self.option_renderer.render("Player 1 ({0} points)".format(self.player_1_score), (ss[0]/4, ss[1]/10), color=colors.WHITE, center=True)
+		self.option_renderer.render("Player 2 ({0} points)".format(self.player_2_score), (ss[0] - ss[0]/4, ss[1]/10), color=colors.WHITE, center=True)
+				
+		# Draw the cards in the player's hand
+		self._render_card_set(self.player_1_deck, (ss[0]/12, ss[1]/6), draw_card_backs=True)
+		self._render_card_set(self.player_2_deck, (ss[0] - ss[0]/12 - CARD_WIDTH, ss[1]/6), draw_card_backs=True)
