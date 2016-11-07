@@ -1,4 +1,4 @@
-import pygame, os, sys, datetime, logging
+import pygame, sys, datetime, logging
 from pygame.locals import *
 from screen import ScreenManager
 from tkinter import messagebox
