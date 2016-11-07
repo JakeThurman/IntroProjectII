@@ -110,7 +110,7 @@ class GameScreen(Screen):
 		#  Used cards will be discarded into the deck
 		#  The string at index 0 of each item is the name of that card's image
 		#  The number at index 1 of each item is that card's value
-		self.deck = [
+		self._deck = [
 			["as", 14], ["2s", 2], ["3s", 3], ["4s", 4], ["5s", 5], ["6s", 6],
 			["7s", 7], ["8s", 8], ["9s", 9], ["10s", 10], ["js", 11], ["qs", 12], ["ks", 13],
 			
@@ -125,7 +125,7 @@ class GameScreen(Screen):
 		]
 		
 		# Shuffle our beautiful new deck
-		random.shuffle(self.deck)
+		random.shuffle(self._deck)
 				
 		# Set Initial State
 		self._state = GameState.DECK_SPLIT
@@ -222,11 +222,11 @@ class GameScreen(Screen):
 		
 		# Split the deck after a small delay	
 		if self._state == GameState.DECK_SPLIT and self._deck_split_timer > 250:
-			self.player_1_deck.append(self.deck.pop(0))
-			self.player_2_deck.append(self.deck.pop())
+			self.player_1_deck.append(self._deck.pop(0))
+			self.player_2_deck.append(self._deck.pop())
 			
 			# Move to the next state if the deck is cleared
-			if len(self.deck) == 0:
+			if len(self._deck) == 0:
 				self._state = GameState.GAME
 				
 		# Handle a "war" delay
@@ -248,7 +248,7 @@ class GameScreen(Screen):
 		ss = self._screen_size
 		
 		# Render the initial deck
-		self._render_card_set(self.deck, (ss[0]/2 - CARD_WIDTH/2, ss[1]/6), draw_card_backs=True)
+		self._render_card_set(self._deck, (ss[0]/2 - CARD_WIDTH/2, ss[1]/6), draw_card_backs=True)
 	
 		if self._state == GameState.GAME:
 			# Tell the players how to play if the game is still going
