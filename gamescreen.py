@@ -69,7 +69,7 @@ class PlayAgainScreen(Screen):
 		"""Renderers the screen 
 		"""
 		# Set the backgroud to white
-		self.shape_renderer.render_rect((0, 0, self._screen_size[0], self._screen_size[1]), color=colors.DARK_GRAY)
+		self.shape_renderer.render_rect((0, 0, self._screen_size[0], self._screen_size[1]), color=colors.DARK_GRAY, alpha=40)
 		
 		# Render the text on the screen
 		ss = self._screen_size
@@ -252,7 +252,7 @@ class GameScreen(Screen):
 	
 		if self._state == GameState.GAME:
 			# Tell the players how to play if the game is still going
-			self.option_renderer.render("Click to take a turn!".format(self.player_2_score), (ss[0]/25, ss[1] - ss[1]/10), color=colors.MID_GRAY, hover_color=colors.MID_GRAY)
+			self.option_renderer.render("Click to take a turn!", (ss[0]/25, ss[1] - ss[1]/10), color=colors.MID_GRAY, hover_color=colors.MID_GRAY)
 		
 			if self._should_make_war:
 				# Alert when there is a war going on
