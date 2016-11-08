@@ -196,14 +196,17 @@ class GameScreen(Screen):
 		player_1_card = self.player_1_battlefield[len(self.player_1_battlefield)-1]
 		player_2_card = self.player_2_battlefield[len(self.player_2_battlefield)-1]
 		
+		# The points to award to the winner
+		points_to_award = 6 if from_a_war else 1
+		
 		# Player 1 wins the skirmish
 		if(player_1_card[1] > player_2_card[1]):
-			self.player_1_score += player_1_card[1]
+			self.player_1_score += points_to_award
 			self._player_1_won_turn = True
 		
 		# Player 2 wins the skirmish
 		elif(player_1_card[1] < player_2_card[1]):
-			self.player_2_score += player_2_card[1]
+			self.player_2_score += points_to_award
 			self._player_1_won_turn = False
 		
 		# The Players have tied
