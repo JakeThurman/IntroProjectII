@@ -11,7 +11,7 @@ def get_card_sprite(x, y, card_id):
 	key = (x, y, card_id)
 	
 	if not key in _img_cache:
-		_img_cache[key] = CardImg(x + random.randint(-3, 3), y, card_id)
+		_img_cache[key] = CardImg(x + random.randint(-3, 3), y + random.randint(-1, 1), card_id)
 	
 	return _img_cache[key]
 
