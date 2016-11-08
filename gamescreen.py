@@ -132,17 +132,21 @@ class GameScreen(Screen):
 		self._should_make_war = False
 		self._player_1_won_turn = None
 		
+		# 
 		self._deck_split_timer = 0
 		self._war_timer = 0
 		
 		self.player_1_deck = []
 		self.player_2_deck = []
-		
 		self.player_1_battlefield = []
 		self.player_2_battlefield = []
 		
 		self.player_1_score = 0
 		self.player_2_score = 0
+		
+		# Holds the cards that should be kept facing 
+		#  down as they were laid as part of a war
+		self._war_casualties = []
 		
 	def handle_click(self):
 		if self._state == GameState.GAME_OVER:
@@ -157,24 +161,33 @@ class GameScreen(Screen):
 			# Also reset the war flag
 			self._should_make_war = False
 			self._war_timer = 0
-			self._draw_card()
-			self._draw_card()
-			self._draw_card()
+			self._draw_card(is_war_casualty=True)
+			self._draw_card(is_war_casualty=True)
+			self._draw_card(is_war_casualty=True)
 			self._find_turn_champ(from_a_war=True)
 		else:
-			self._draw_card()
+			self._draw_card(is_war_casualty=False)
 			self._find_turn_champ(from_a_war=False)
 		
-	def _draw_card(self):
+	def _draw_card(self, is_war_casualty):
 		if self._state == GameState.GAME_OVER:
 			return
 	
 		# display player 1's next card
-		self.player_1_battlefield.append(self.player_1_deck.pop(0))
+		p1_card = self.player_1_deck.pop(0)
+		self.player_1_battlefield.append(p1_card)
 		
 		# display player 2's next card
-		self.player_2_battlefield.append(self.player_2_deck.pop(0))
-
+		p2_card = self.player_2_deck.pop(0)
+		self.player_2_battlefield.append(p2_card)
+		
+		# Handle the case that this is a war casualty,
+		#  and we need to record that the card should be 
+		#  drawn face down.
+		if is_war_casualty:
+			self._war_casualties.append(p1_card)
+			self._war_casualties.append(p2_card)
+		
 		# stop the game if we run out of cards
 		if len(self.player_1_deck) == 0 or len(self.player_2_deck) == 0:
 			self._state = GameState.GAME_OVER
@@ -211,10 +224,14 @@ class GameScreen(Screen):
 			pygame.quit()
 			sys.exit()
 			
-	def _render_card_set(self, battlefield, start_pos, draw_card_backs=False):
+	def _render_card_set(self, battlefield, start_pos, draw_only_card_backs=False, offset=8):
 		for i in range(0, len(battlefield)):
-			crd = battlefield[i]
-			img = get_card_sprite(start_pos[0], start_pos[1] + (i * 7), "back" if draw_card_backs else crd[0])
+			card = battlefield[i]
+			card_type = card[0]
+			if draw_only_card_backs or card in self._war_casualties:
+				card_type = "back"
+			
+			img = get_card_sprite(start_pos[0], start_pos[1] + (i * offset), card_type)
 			self.sprite_renderer.render(img)
 			
 	def _handle_time(self, refresh_time):
@@ -248,7 +265,7 @@ class GameScreen(Screen):
 		ss = self._screen_size
 		
 		# Render the initial deck
-		self._render_card_set(self._deck, (ss[0]/2 - CARD_WIDTH/2, ss[1]/6), draw_card_backs=True)
+		self._render_card_set(self._deck, (ss[0]/2 - CARD_WIDTH/2, ss[1]/6), offset=2.75, draw_only_card_backs=True)
 	
 		if self._state == GameState.GAME:
 			# Tell the players how to play if the game is still going
@@ -275,5 +292,5 @@ class GameScreen(Screen):
 		self.option_renderer.render("Player 2 ({0} points)".format(self.player_2_score), (ss[0] - ss[0]/4, ss[1]/10), color=colors.WHITE, center=True)
 				
 		# Draw the cards in the player's hand
-		self._render_card_set(self.player_1_deck, (ss[0]/12, ss[1]/6), draw_card_backs=True)
-		self._render_card_set(self.player_2_deck, (ss[0] - ss[0]/12 - CARD_WIDTH, ss[1]/6), draw_card_backs=True)
+		self._render_card_set(self.player_1_deck, (ss[0]/12, ss[1]/6), draw_only_card_backs=True, offset=5)
+		self._render_card_set(self.player_2_deck, (ss[0] - ss[0]/12 - CARD_WIDTH, ss[1]/6), draw_only_card_backs=True, offset=5)
