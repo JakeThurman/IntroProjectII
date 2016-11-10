@@ -3,19 +3,26 @@ from pygame.locals import *
 from rendering import *
 from screen import Screen
 
-# Contants
+# Contant
 CARD_WIDTH = 71
 
 _img_cache = {}
 def get_card_sprite(x, y, card_id):
+	"""Handles creating and caching the images used for cards
+	"""
+	# We will cache on the position and the image name (card_id).
 	key = (x, y, card_id)
 	
+	# If the images has not yet been accessed (at least at this position), create it.
 	if not key in _img_cache:
 		_img_cache[key] = CardImg(x + random.randint(-3, 3), y + random.randint(-1, 1), card_id)
 	
+	# Returned the cached image.
 	return _img_cache[key]
 
 class CardImg(Sprite):
+	"""Helper/Wrapper class for renderinmg images.
+	"""
 	def __init__(self, x, y, card_id):
 		super(CardImg, self).__init__(x, y, "images/{0}.png".format(card_id.lower()))
 		
@@ -46,6 +53,7 @@ class PlayAgainScreen(Screen):
 		# Play again if the user clicks Yes
 		if self.yes_bttn.is_hovered:
 			self._play_again()
+		
 		# Quit if the user clicks No
 		elif self.no_bttn.is_hovered:
 			pygame.quit()
@@ -68,20 +76,24 @@ class PlayAgainScreen(Screen):
 	def render(self, refresh_time):
 		"""Renderers the screen 
 		"""
-		# Set the backgroud to white
+		# Set the background
 		self.shape_renderer.render_rect((0, 0, self._screen_size[0], self._screen_size[1]), color=colors.DARK_GRAY, alpha=40)
 		
 		# Render the text on the screen
-		ss = self._screen_size
+		ss = self._screen_size #this is just so I don't have to type the whole variable name out every time!
 		
+		# Print who won on the screen, and with how many points.
 		winner_msg = ("Player 1 Wins!" if self._winner_is_player1 else "Player 2 Wins!") + " ({0} points)".format(self._winner_score)
 		self.header_renderer.render(winner_msg, (ss[0]/10, ss[1]/10), color=colors.WHITE)
 		
+		# Ask the user if they would like to play again
 		self.header_renderer.render("Play Again?", (ss[0]/10, (ss[1]/10) * 3), color=colors.WHITE)
 		
+		# Render options for playing again. (Yes and No)
 		self.yes_bttn = self.option_renderer.render("Yes Please!",   (ss[0]/10, (ss[1]/10) * 4), color=colors.LIGHT_GRAY)
 		self.no_bttn =  self.option_renderer.render("No. I'm Done.", (ss[0]/10, (ss[1]/10) * 5), color=colors.LIGHT_GRAY)
 
+# "Enum" to represent the current major-state of the game
 class GameState:
 	DECK_SPLIT = 0
 	GAME = 1
@@ -132,15 +144,17 @@ class GameScreen(Screen):
 		self._should_make_war = False
 		self._player_1_won_turn = None
 		
-		# 
+		# Timers for handling delays
 		self._deck_split_timer = 0
 		self._war_timer = 0
 		
+		# Create "decks" for the players to hold.
 		self.player_1_deck = []
 		self.player_2_deck = []
 		self.player_1_battlefield = []
 		self.player_2_battlefield = []
 		
+		# Initialize each player's score to 0
 		self.player_1_score = 0
 		self.player_2_score = 0
 		
@@ -149,8 +163,11 @@ class GameScreen(Screen):
 		self._war_casualties = []
 		
 	def handle_click(self):
+		# If the game is over, end the game
 		if self._state == GameState.GAME_OVER:
 			self._on_game_end()
+			
+		# If we are in the game, take the next turn.
 		elif self._state == GameState.GAME:
 			self._take_turn()
 		
@@ -158,22 +175,32 @@ class GameScreen(Screen):
 		if self._should_make_war:
 			# When the cards are a tied, we have a war
 			# Both players draw 3 cards, and then check who won.
-			# Also reset the war flag
+			self._draw_card(True)
+			self._draw_card(True)
+			self._draw_card(True)
+			self._draw_card(False)
+			self._find_turn_champ(True)
+			# Also reset the war flag and timer
 			self._should_make_war = False
 			self._war_timer = 0
-			self._draw_card(is_war_casualty=True)
-			self._draw_card(is_war_casualty=True)
-			self._draw_card(is_war_casualty=True)
-			self._find_turn_champ(from_a_war=True)
 		else:
-			self._draw_card(is_war_casualty=False)
-			self._find_turn_champ(from_a_war=False)
+			# Take a normal turn, we're not in a war.
+			self._draw_card(False)
+			self._find_turn_champ(False)
 		
 	def _draw_card(self, is_war_casualty):
+		"""Draws 1 card from each player's deck
+			moving the card into their "battlefield".
+			Also handles marking cards as caualities 
+			of war (so they will be drawn face down).
+		"""
+		
+		# Don't draw a card if the game is over, as
+		#  the game ends when there is no cards left!
 		if self._state == GameState.GAME_OVER:
 			return
 	
-		# display player 1's next card
+		# Display player 1's next card
 		p1_card = self.player_1_deck.pop(0)
 		self.player_1_battlefield.append(p1_card)
 		
@@ -193,6 +220,11 @@ class GameScreen(Screen):
 			self._state = GameState.GAME_OVER
 			
 	def _find_turn_champ(self, from_a_war):
+		""" This function finds out who was the 
+			winner as such and updates the related 
+			state (including score).
+		"""
+	
 		player_1_card = self.player_1_battlefield[len(self.player_1_battlefield)-1]
 		player_2_card = self.player_2_battlefield[len(self.player_2_battlefield)-1]
 		
@@ -214,9 +246,15 @@ class GameScreen(Screen):
 			self._should_make_war = True
 			self._player_1_won_turn = None
 	
-	def _on_game_end(self):		
+	def _on_game_end(self):
+		"""Handles taking the player to the "Play Again"
+			screen once the game has ended.
+		"""
+		# TODO: Should we handle the case where there is a tie.
 		winner_is_player1 = self.player_1_score > self.player_2_score
 		winner_score = self.player_1_score if winner_is_player1 else self.player_2_score
+		
+		# Set the PlayAgainScreen as the new current screen.
 		self._screen_manager.set(lambda *args: PlayAgainScreen(*args, winner_is_player1=winner_is_player1, winner_score=winner_score))
 	
 	def handle_key_up(self, key):
@@ -228,6 +266,9 @@ class GameScreen(Screen):
 			sys.exit()
 			
 	def _render_card_set(self, battlefield, start_pos, draw_only_card_backs=False, offset=8):
+		"""Renders a pile of cards to the screen.
+		"""
+		
 		for i in range(0, len(battlefield)):
 			card = battlefield[i]
 			card_type = card[0]
@@ -238,11 +279,13 @@ class GameScreen(Screen):
 			self.sprite_renderer.render(img)
 			
 	def _handle_time(self, refresh_time):
+		"""Handles delayed actions.
+		"""
 		self._deck_split_timer += refresh_time
 		
 		# Split the deck after a small delay	
 		if self._state == GameState.DECK_SPLIT and self._deck_split_timer > 250:
-			self.player_1_deck.append(self._deck.pop(0))
+			self.player_1_deck.append(self._deck.pop())
 			self.player_2_deck.append(self._deck.pop())
 			
 			# Move to the next state if the deck is cleared
@@ -261,7 +304,7 @@ class GameScreen(Screen):
 		"""	
 		self._handle_time(refresh_time)
 		
-		# Set the backgroud to white
+		# Set the background
 		self.shape_renderer.render_rect((0, 0, self._screen_size[0], self._screen_size[1]), color=colors.DARK_GRAY)
 		
 		# Shortcut named variable
