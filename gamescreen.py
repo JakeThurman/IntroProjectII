@@ -357,5 +357,5 @@ class GameScreen(Screen):
 		self.option_renderer.render("Player 2 ({0} points)".format(self.player_2_score), (ss[0] - ss[0]/4, ss[1]/10), color=colors.WHITE, center=True)
 				
 		# Draw the cards in the player's hand
-		self._render_card_set(self.player_1_deck, (ss[0]/12, ss[1]/6), draw_only_card_backs=True, offset=5)
-		self._render_card_set(self.player_2_deck, (ss[0] - ss[0]/12 - CARD_WIDTH, ss[1]/6), draw_only_card_backs=True, offset=5)
+		self._render_card_set(self.player_1_deck, (ss[0]/12, ss[1]/6), draw_only_card_backs=True, offset=0)
+		self._render_card_set(self.player_2_deck, (ss[0] - ss[0]/12 - CARD_WIDTH, ss[1]/6), draw_only_card_backs=True, offset=0)
