@@ -21,10 +21,16 @@ def get_card_sprite(x, y, card_id):
 	return _img_cache[key]
 
 class CardImg(Sprite):
-	"""Helper/Wrapper class for renderinmg images.
+	"""Helper/Wrapper class for rendering images.
 	"""
 	def __init__(self, x, y, card_id):
 		super(CardImg, self).__init__(x, y, "images/{0}.png".format(card_id.lower()))
+		
+class BkgImg(Sprite):
+	"""Helper/Wrapper class for rendering background.
+	"""
+	def __init__(self, x, y):
+		super(BkgImg, self).__init__(x, y, "images/background.png")
 		
 class PlayAgainScreen(Screen):
 	"""Asks the user if they wish to play again
@@ -307,7 +313,7 @@ class GameScreen(Screen):
 		self._handle_time(refresh_time)
 		
 		# Set the background
-		self.shape_renderer.render_rect((0, 0, self._screen_size[0], self._screen_size[1]), color=colors.DARK_GRAY)
+		self.sprite_renderer.render(BkgImg(0, 0))
 		
 		# Shortcut named variable
 		ss = self._screen_size
