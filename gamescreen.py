@@ -38,8 +38,8 @@ class PlayAgainScreen(Screen):
 		
 		# Create dependencies
 		self.shape_renderer = ShapeRenderer(surface)
-		self.option_renderer = OptionRenderer(surface, fonts.OPEN_SANS())
-		self.header_renderer = OptionRenderer(surface, fonts.OPEN_SANS(30))
+		self.option_renderer = OptionRenderer(surface, fonts.random_font())
+		self.header_renderer = OptionRenderer(surface, fonts.random_font(30))
 		
 		# Store config
 		self._winner_is_player1 = winner_is_player1
@@ -112,7 +112,7 @@ class GameScreen(Screen):
 		# Create dependencies
 		self.shape_renderer = ShapeRenderer(surface)
 		self.sprite_renderer = SpriteRenderer(surface)
-		self.option_renderer = OptionRenderer(surface, fonts.OPEN_SANS())
+		self.option_renderer = OptionRenderer(surface, fonts.random_font())
 		
 		# Store settings
 		self._screen_size = screen_size
