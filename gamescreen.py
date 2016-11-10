@@ -10,12 +10,21 @@ _img_cache = {}
 def get_card_sprite(x, y, card_id):
 	"""Handles creating and caching the images used for cards
 	"""
+	
 	# We will cache on the position and the image name (card_id).
 	key = (x, y, card_id)
 	
 	# If the images has not yet been accessed (at least at this position), create it.
 	if not key in _img_cache:
-		_img_cache[key] = CardImg(x, y, card_id)
+		# There's an extra card back we drew. This gets to show that off. Please forgive us.
+		choices = ["back"] * 51
+		choices.append("backgreat")		
+	
+		new_card_id = card_id
+		if card_id == "back":		
+			new_card_id = random.choice(choices)
+	
+		_img_cache[key] = CardImg(x, y, new_card_id)
 	
 	# Returned the cached image.
 	return _img_cache[key]
@@ -280,6 +289,8 @@ class GameScreen(Screen):
 		for i in range(0, len(battlefield)):
 			card = battlefield[i]
 			card_type = card[0]
+			
+			# Draw the back of the card when necessary.
 			if draw_only_card_backs or card in self._war_casualties:
 				card_type = "back"
 			
