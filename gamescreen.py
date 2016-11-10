@@ -37,9 +37,11 @@ class PlayAgainScreen(Screen):
 		super(PlayAgainScreen, self).__init__()
 		
 		# Create dependencies
+		rff = fonts.random_font_factory()
+		
 		self.shape_renderer = ShapeRenderer(surface)
-		self.option_renderer = OptionRenderer(surface, fonts.random_font())
-		self.header_renderer = OptionRenderer(surface, fonts.random_font(30))
+		self.option_renderer = OptionRenderer(surface, rff())
+		self.header_renderer = OptionRenderer(surface, rff(30))
 		
 		# Store config
 		self._winner_is_player1 = winner_is_player1
