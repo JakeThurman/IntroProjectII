@@ -15,7 +15,7 @@ def get_card_sprite(x, y, card_id):
 	
 	# If the images has not yet been accessed (at least at this position), create it.
 	if not key in _img_cache:
-		_img_cache[key] = CardImg(x + random.randint(-3, 3), y + random.randint(-1, 1), card_id)
+		_img_cache[key] = CardImg(x, y, card_id)
 	
 	# Returned the cached image.
 	return _img_cache[key]
