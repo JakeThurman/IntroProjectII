@@ -4,6 +4,14 @@ from screen import ScreenManager
 from tkinter import messagebox
 from gamescreen import GameScreen
 
+# This is start point for the game.
+#  See gamescreen.py for the main game logic.
+#
+# This file takes the events from pygame and 
+#  passes them down to the renderer in gamescreen.py
+#  along with handling errors which are dumped to an 
+#  errors.log in the same folder as the code.
+
 def main():
 	pygame.init()
 	

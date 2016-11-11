@@ -9,11 +9,6 @@ class ShapeRenderer(object):
 		"""
 		self.surface = surface
 	
-	def render_circle(self, pos, r, color=None):
-		"""Draws a pygame circle
-		"""
-		pygame.draw.circle(self.surface, color, pos, r, 0)
-	
 	def render_rect(self, coords, color=None, alpha=None):
 		"""Draws a pygame rectangle
 		"""
